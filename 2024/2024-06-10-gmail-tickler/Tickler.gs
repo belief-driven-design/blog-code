@@ -26,7 +26,7 @@ const Tickler = {
   moveToInbox: (labelPrefix, labelValue) => {
     try {
       // STEP 1: GET LABEL
-      const labelName = Ticker.labelName(labelPrefix, labelValue)
+      const labelName = Tickler.labelName(labelPrefix, labelValue)
       const label = GmailApp.getUserLabelByName(labelName)
       if (!label) {
         Logger.log(`Label '${labelName}' not found`)
