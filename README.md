@@ -14,6 +14,10 @@ This repository contains (some) of the code examples used in my blog.
     * Read on [Medium](https://medium.com/@benweidig/inbox-zero-with-a-scripted-gmail-ticker-file-a6e109c87898)
     * Read on [belief-driven-design.com](https://belief-driven-design.com/gmail-tickler-2b42a/)
 
+### 2026
+
+* [2026-09-01: ClassValue: The Cache That Dies With the Class](2026/2026-09-01-classvalue/README.md)
+    * Read on [belief-driven-design.com](https://belief-driven-design.com/classvalue-1090d/)
 
 ## License
 
