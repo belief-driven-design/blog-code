@@ -16,8 +16,12 @@ This repository contains (some) of the code examples used in my blog.
 
 ### 2026
 
+* [2026-10-26: Widening Beats Boxing Beats Varargs](2026/2026-10-26-overload-resolution/README.md)
+    * Read on [belief-driven-design.com](https://belief-driven-design.com/overload-resolution-95542/)
+
 * [2026-09-01: ClassValue: The Cache That Dies With the Class](2026/2026-09-01-classvalue/README.md)
     * Read on [belief-driven-design.com](https://belief-driven-design.com/classvalue-1090d/)
+
 
 ## License
 
