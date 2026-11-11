@@ -1,0 +1,2 @@
+{{- /* Hand the Markdown table back as is, the gemtext conversion turns it into preformatted text. */ -}}
+{{ .Inner }}

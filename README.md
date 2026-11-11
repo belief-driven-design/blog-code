@@ -16,6 +16,9 @@ This repository contains (some) of the code examples used in my blog.
 
 ### 2026
 
+* [2026-11-11: This Blog Now Speaks Gemini](2026/2026-11-11-gemini-capsule/README.md)
+    * Read on [belief-driven-design.com](https://belief-driven-design.com/gemini-capsule-5ee3a/)
+
 * [2026-10-26: Widening Beats Boxing Beats Varargs](2026/2026-10-26-overload-resolution/README.md)
     * Read on [belief-driven-design.com](https://belief-driven-design.com/overload-resolution-95542/)
 

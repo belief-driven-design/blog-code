@@ -1,0 +1,17 @@
+services:
+
+  # Runs next to the nginx container serving the HTML version, and reads the
+  # same directory the deployment rsyncs the Hugo output into.
+  agate:
+    image: ghcr.io/mbrubeck/agate:3.3.25
+    container_name: agate
+    command: [ "--hostname", "belief-driven-design.com", "--lang", "en" ]
+    ports:
+      - "0.0.0.0:1965:1965"
+    volumes:
+      - ~/nginx/sites/belief-driven-design.com:/gmi:ro
+      # Agate generates a self-signed certificate on first start, so this one
+      # needs to be writable. Back it up: Gemini clients pin the certificate
+      # on first visit (TOFU) and warn about any change.
+      - ~/agate/certs:/certs
+    restart: unless-stopped

@@ -1,0 +1,22 @@
+# {{ site.Title }}
+
+{{ site.Params.description }}
+
+=> /about/ About me
+=> {{ (.OutputFormats.Get "gemfeed").RelPermalink }} Atom feed
+=> https://a-functional-approach-to-java.com My book: A Functional Approach to Java
+
+## Articles
+{{- range (where site.RegularPages "Type" "posts").GroupByPublishDate "2006" }}
+
+### {{ .Key }}
+{{ range .Pages }}
+=> {{ strings.TrimSuffix "index.gmi" .RelPermalink }} {{ .PublishDate.Format "2006-01-02" }} {{ .Title }}
+{{- end }}
+{{- end }}
+
+---
+
+=> {{ site.BaseURL }} This capsule on the web
+=> {{ site.BaseURL }}imprint/ Imprint / Impressum
+=> {{ site.BaseURL }}privacy/ Privacy / Datenschutz

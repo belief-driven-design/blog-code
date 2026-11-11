@@ -1,0 +1,3 @@
+Interested in using functional concepts and techniques in your Java code? Check out my book! Available in English, Polish, and Korean.
+
+=> https://a-functional-approach-to-java.com A Functional Approach to Java

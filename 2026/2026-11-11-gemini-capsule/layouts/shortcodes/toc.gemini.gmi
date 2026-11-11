@@ -1,0 +1,1 @@
+{{- /* No table of contents in gemtext, clients list the headings themselves. */ -}}

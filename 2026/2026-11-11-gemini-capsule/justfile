@@ -1,0 +1,24 @@
+# Serve the capsule locally, with the same Agate image as on the server.
+# Needs hugo and docker on the PATH.
+
+AGATE_IMAGE := "ghcr.io/mbrubeck/agate:3.3.25"
+OUT_DIR := "public-gemini"
+GEMINI_PORT := env("GEMINI_PORT", "1965")
+# Agate generates a self-signed cert for localhost on first start. Kept outside
+# the repo so cleaning the output doesn't delete it, which would make every
+# Gemini client warn about a changed certificate.
+GEMINI_CERTS := env("GEMINI_CERTS", home_directory() / ".cache/agate-local")
+
+# Agate doesn't watch for changes, but it reads files on every request, so
+# re-running hugo in another terminal is enough to see edits.
+[doc("Serve the Gemini capsule on gemini://localhost:GEMINI_PORT/")]
+serve-gemini:
+    rm -rf "{{ OUT_DIR }}"
+    hugo --minify -d "{{ OUT_DIR }}"
+    mkdir -p "{{ GEMINI_CERTS }}"
+    docker run --rm \
+        --name bdd-serve-gemini \
+        -p "127.0.0.1:{{ GEMINI_PORT }}:1965" \
+        -v "{{ justfile_directory() }}/{{ OUT_DIR }}:/gmi:ro" \
+        -v "{{ GEMINI_CERTS }}:/certs" \
+        "{{ AGATE_IMAGE }}" --hostname localhost --lang en

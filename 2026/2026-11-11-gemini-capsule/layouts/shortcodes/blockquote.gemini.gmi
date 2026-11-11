@@ -1,0 +1,8 @@
+{{- $source := or (.Get "source") (.Get "title") (.Get "link") }}
+{{ range split (strings.TrimSpace .Inner) "\n" }}
+> {{ . }}
+{{- end }}
+> — {{ with .Get "author" }}{{ . }}{{ end }}{{ with $source }}, {{ . }}{{ end }}
+{{- with .Get "link" }}
+=> {{ . }}
+{{- end }}

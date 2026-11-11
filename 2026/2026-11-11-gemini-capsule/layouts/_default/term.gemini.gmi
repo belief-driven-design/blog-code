@@ -1,0 +1,12 @@
+# {{ .Title }}
+{{- with .Content }}
+
+{{ partial "gemini/content.html" $.RenderShortcodes }}
+{{- end }}
+{{ range .Pages }}
+=> {{ strings.TrimSuffix "index.gmi" .RelPermalink }} {{ .PublishDate.Format "2006-01-02" }} {{ .Title }}
+{{- end }}
+
+---
+
+=> / Home: {{ site.Title }}

@@ -1,0 +1,35 @@
+# Only the Gemini-related parts of the blog's hugo.toml.
+# Merge them into an existing config.
+
+# Gemini capsule. Every page also renders as gemtext (index.gmi next to the
+# index.html), and the home page gets an Atom gemlog feed. The protocol makes
+# .Permalink produce gemini:// URLs for these formats, which the feed needs;
+# the capsule itself links with relative URLs.
+[mediaTypes]
+  [mediaTypes.'text/gemini']
+    suffixes = ['gmi']
+  [mediaTypes.'application/atom+xml']
+    suffixes = ['xml']
+
+[outputFormats]
+  [outputFormats.gemini]
+    mediaType = 'text/gemini'
+    baseName = 'index'
+    protocol = 'gemini://'
+    isPlainText = true
+    permalinkable = true
+  [outputFormats.gemfeed]
+    mediaType = 'application/atom+xml'
+    baseName = 'atom'
+    protocol = 'gemini://'
+    isPlainText = true
+
+[outputs]
+home = [ "HTML", "RSS", "gemini", "gemfeed" ]
+page = [ "HTML", "gemini" ]
+term = [ "HTML", "RSS", "gemini" ]
+
+# Pages that shouldn't be part of the capsule (imprint, privacy, search) opt
+# out in their front matter:
+#
+#   outputs: [ html ]

@@ -1,0 +1,25 @@
+{{- /*
+  Maps a link destination from the rendered Markdown to one that works inside
+  the capsule. Returns "" for destinations that mean nothing there.
+
+  - ref/relref already resolve to the gemini output format, but as absolute
+    gemini://<host>/<slug>/index.gmi URLs. The capsule links relative to its
+    root and lets the server pick the directory's index.gmi.
+  - Images and other files live in assets/, so they only exist in the output
+    once something asks for their permalink. Same lookup as render-image.html,
+    including dropping the leftover "#center" fragments.
+  - Bare #fragments have no equivalent in gemtext.
+*/ -}}
+{{- $url := . }}
+{{- $capsule := printf "gemini://%s" (urls.Parse site.BaseURL).Host }}
+{{- if hasPrefix $url "#" }}
+  {{- $url = "" }}
+{{- else if hasPrefix $url $capsule }}
+  {{- /* gemtext has no anchors, so a #section can only point at the page */}}
+  {{- $url = strings.TrimSuffix "index.gmi" (index (split (strings.TrimPrefix $capsule $url) "#") 0) }}
+{{- else if hasPrefix $url "/" }}
+  {{- with resources.Get (index (split $url "#") 0) }}
+    {{- $url = .RelPermalink }}
+  {{- end }}
+{{- end }}
+{{- return $url }}

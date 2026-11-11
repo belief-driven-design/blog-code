@@ -1,0 +1,139 @@
+{{- /*
+  Converts a page's Markdown (shortcodes already rendered by their .gmi
+  variants, see .RenderShortcodes) into gemtext.
+
+  Gemtext is line-based: every line is one block, links stand on their own
+  "=> " lines, and there are only three heading levels and no tables. So this
+  walks the Markdown line by line, joins soft-wrapped paragraphs, list items
+  and quotes into single lines, and puts the links of each block right below
+  it. Code fences pass through untouched; tables become preformatted text,
+  which is how they look in the Markdown source anyway.
+
+  Returns the gemtext as a string.
+*/ -}}
+{{- $out := slice }}
+{{- $para := "" }}
+{{- $prefix := "" }}
+{{- $open := false }}
+{{- $fence := "" }}
+{{- $fenceIndent := "" }}
+{{- $table := false }}
+
+{{- /* The trailing blank line flushes the last block. */}}
+{{- range split (print . "\n\n") "\n" }}
+  {{- $line := . }}
+  {{- $trim := strings.TrimSpace $line }}
+
+  {{- if $fence }}
+    {{- if and (hasPrefix $trim $fence) (eq (strings.TrimLeft "`~" $trim) "") }}
+      {{- $out = $out | append "```" }}
+      {{- $fence = "" }}
+    {{- else }}
+      {{- $out = $out | append (strings.TrimPrefix $fenceIndent $line) }}
+    {{- end }}
+    {{- continue }}
+  {{- end }}
+
+  {{- $kind := "text" }}
+  {{- if findRE "^(```|~~~)" $trim }}
+    {{- $kind = "fence" }}
+  {{- else if eq $trim "" }}
+    {{- $kind = "blank" }}
+  {{- else if findRE `^<!--.*-->$` $trim }}
+    {{- $kind = "skip" }}
+  {{- else if findRE `^(-{3,}|\*{3,}|_{3,})$` $trim }}
+    {{- $kind = "blank" }}
+  {{- else if hasPrefix $trim "|" }}
+    {{- $kind = "table" }}
+  {{- else if findRE `^#{1,6}\s` $line }}
+    {{- $kind = "heading" }}
+  {{- else if findRE `^\s*[*+-]\s+` $line }}
+    {{- $kind = "item" }}
+  {{- else if findRE `^\s*\d+[.)]\s+` $line }}
+    {{- $kind = "number" }}
+  {{- else if hasPrefix $trim ">" }}
+    {{- $kind = "quote" }}
+  {{- else if findRE `^!\[.*\]\(.*\)(\{[^}]*\})?$` $trim }}
+    {{- $kind = "image" }}
+  {{- else if hasPrefix $trim "<" }}
+    {{- /* Block-level HTML: keep whatever text it carries, if any. */}}
+    {{- $trim = strings.TrimSpace (replaceRE `<style>.*?</style>|<script>.*?</script>|</?(div|p|ul|ol|li|figure|figcaption|center|details|summary|aside|table|thead|tbody|tr|td|th)(\s[^>]*)?>` "" $trim) }}
+    {{- if eq $trim "" }}
+      {{- $kind = "skip" }}
+    {{- end }}
+  {{- end }}
+
+  {{- if and $table (ne $kind "table") }}
+    {{- $out = $out | append "```" }}
+    {{- $table = false }}
+  {{- end }}
+
+  {{- /* Anything but more text (or more quote) ends the open block. */}}
+  {{- $continues := or (eq $kind "text") (and (eq $kind "quote") (eq $prefix "> ")) }}
+  {{- if and $open (not $continues) }}
+    {{- $r := partial "gemini/inline.html" $para }}
+    {{- $out = $out | append (print $prefix $r.text) }}
+    {{- $out = $out | append $r.links }}
+    {{- $para = "" }}
+    {{- $prefix = "" }}
+    {{- $open = false }}
+  {{- end }}
+
+  {{- if eq $kind "fence" }}
+    {{- $fence = substr $trim 0 3 }}
+    {{- $fenceIndent = index (findRE `^\s*` $line) 0 }}
+    {{- $lang := strings.TrimSpace (replaceRE `\{.*\}` "" (strings.TrimLeft "`~" $trim)) }}
+    {{- $out = $out | append (print "```" $lang) }}
+  {{- else if eq $kind "blank" }}
+    {{- if and $out (ne (index $out (sub (len $out) 1)) "") }}
+      {{- $out = $out | append "" }}
+    {{- end }}
+  {{- else if eq $kind "table" }}
+    {{- if not $table }}
+      {{- $out = $out | append "```table" }}
+      {{- $table = true }}
+    {{- end }}
+    {{- $out = $out | append $trim }}
+  {{- else if eq $kind "heading" }}
+    {{- $level := len (index (findRE `^#+` $line) 0) }}
+    {{- $r := partial "gemini/inline.html" (replaceRE `^#+\s+|\s+#+$` "" $trim) }}
+    {{- $out = $out | append (printf "%s %s" (strings.Repeat (math.Min $level 3 | int) "#") $r.text) }}
+    {{- $out = $out | append $r.links }}
+  {{- else if eq $kind "item" }}
+    {{- $para = replaceRE `^\s*[*+-]\s+` "" $line }}
+    {{- $prefix = "* " }}
+    {{- $open = true }}
+  {{- else if eq $kind "number" }}
+    {{- $para = $trim }}
+    {{- $open = true }}
+  {{- else if eq $kind "quote" }}
+    {{- $text := replaceRE `^>\s?` "" $trim }}
+    {{- if $open }}
+      {{- $para = print $para " " $text }}
+    {{- else }}
+      {{- $para = $text }}
+      {{- $prefix = "> " }}
+      {{- $open = true }}
+    {{- end }}
+  {{- else if eq $kind "image" }}
+    {{- /* Titles often carry photo credits with links, keep those too. */}}
+    {{- $m := index (findRESubmatch `^!\[((?:[^\[\]]|\[[^\[\]]*\])*)\]\(\s*((?:[^()\s]|\([^()\s]*\))+)(?:\s+"([^"]*)")?\s*\)` $trim) 0 }}
+    {{- $url := partial "gemini/url.html" (index $m 2) }}
+    {{- $alt := partial "gemini/inline.html" (index $m 1) }}
+    {{- $title := partial "gemini/inline.html" (index $m 3) }}
+    {{- if $url }}
+      {{- $out = $out | append (strings.TrimSpace (printf "=> %s %s" $url (or $alt.text $title.text "Image"))) }}
+    {{- end }}
+    {{- $out = $out | append $alt.links }}
+    {{- $out = $out | append $title.links }}
+  {{- else if eq $kind "text" }}
+    {{- if $open }}
+      {{- $para = print $para " " $trim }}
+    {{- else }}
+      {{- $para = $trim }}
+      {{- $open = true }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+
+{{- return strings.TrimSpace (delimit $out "\n") }}

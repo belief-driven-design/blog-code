@@ -1,0 +1,4 @@
+{{- /* Contact details are only obfuscated in the HTML version (via JS), so
+       they are never written into gemtext. Pages using this shortcode must
+       stay HTML-only (outputs: [ html ] in the front matter). */ -}}
+{{- errorf "%s: shortcode %q is not available in gemtext" .Position .Name -}}

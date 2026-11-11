@@ -1,0 +1,48 @@
+{{- /*
+  Flattens one line of inline Markdown into gemtext, which has no inline markup
+  at all. Returns a dict:
+
+    text   the line with links reduced to their text and emphasis removed
+    links  the "=> url text" lines for the links, to go below the block
+
+  Inline code keeps its backticks, which reads fine as plain text and is what
+  most gemtext authors do. Links are extracted before anything splits on
+  backticks, because link texts often contain code.
+*/ -}}
+{{- $text := . }}
+{{- $links := slice }}
+{{- $seen := slice }}
+
+{{- /* Strip inline HTML first. Inline <a> becomes a Markdown link so it gets
+       the same treatment as the rest, <sup> is mostly used for powers. */}}
+{{- $text = replaceRE `<style>.*?</style>|<script>.*?</script>` "" $text }}
+{{- $text = replaceRE `<a\s[^>]*href="([^"]*)"[^>]*>(.*?)</a>` "[$2]($1)" $text }}
+{{- $text = replaceRE `<sup>(.*?)</sup>` "^$1" $text }}
+{{- $text = replaceRE `<br\s*/?>` " " $text }}
+{{- $text = replaceRE `</?(b|i|em|strong|code|span|sub|kbd|p)(\s[^>]*)?>` "" $text }}
+{{- $text = replaceRE `&nbsp;` " " $text }}
+
+{{- /* Autolinks */}}
+{{- $text = replaceRE `<((?:https?|gemini)://[^>\s]+)>` "[$1]($1)" $text }}
+
+{{- /* Link texts may hold one level of brackets (image alt texts with photo
+       credits do), destinations one level of parentheses (Javadoc anchors
+       like #randomUUID()). The optional "title" is dropped. */}}
+{{- $linkRE := `!?\[((?:[^\[\]]|\[[^\[\]]*\])*)\]\(\s*((?:[^()\s]|\([^()\s]*\))+)(?:\s+"[^"]*")?\s*\)` }}
+{{- range findRESubmatch $linkRE $text }}
+  {{- $url := partial "gemini/url.html" (index . 2) }}
+  {{- if and $url (not (in $seen $url)) }}
+    {{- $seen = $seen | append $url }}
+    {{- /* the label may itself contain a link, e.g. a photo credit */}}
+    {{- $label := partial "gemini/plain.html" (replaceRE $linkRE "$1" (index . 1)) }}
+    {{- if and (eq $label (index . 2)) (eq $url (index . 2)) }}
+      {{- $label = "" }}
+    {{- end }}
+    {{- $links = $links | append (strings.TrimSpace (printf "=> %s %s" $url $label)) }}
+  {{- end }}
+{{- end }}
+{{- /* twice, for links nested in link texts */}}
+{{- $text = replaceRE $linkRE "$1" $text }}
+{{- $text = replaceRE $linkRE "$1" $text }}
+
+{{- return dict "text" (partial "gemini/plain.html" $text) "links" $links }}

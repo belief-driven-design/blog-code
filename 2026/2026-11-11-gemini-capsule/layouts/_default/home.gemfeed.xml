@@ -1,0 +1,32 @@
+{{- /* Atom feed for the capsule. Gemini feed readers expect Atom with gemini://
+       links, so this mirrors rss.xml but points at the gemini output of each
+       post. */ -}}
+{{- $pages := where (where site.RegularPages "Type" "posts") "Params.rss" "ne" false }}
+{{- $limit := site.Config.Services.RSS.Limit }}
+{{- if ge $limit 1 }}
+{{- $pages = $pages | first $limit }}
+{{- end }}
+{{- $home := strings.TrimSuffix "index.gmi" (.OutputFormats.Get "gemini").Permalink -}}
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>{{ site.Title | transform.XMLEscape }}</title>
+  <subtitle>{{ site.Params.description | transform.XMLEscape }}</subtitle>
+  <id>{{ $home }}</id>
+  <link href="{{ $home }}" rel="alternate" />
+  <link href="{{ (.OutputFormats.Get "gemfeed").Permalink }}" rel="self" />
+  {{- with $pages }}
+  <updated>{{ (index .ByLastmod.Reverse 0).Lastmod.Format "2006-01-02T15:04:05Z07:00" }}</updated>
+  {{- end }}
+  <author><name>{{ site.Params.author | transform.XMLEscape }}</name></author>
+  {{- range $pages }}
+  {{- $link := strings.TrimSuffix "index.gmi" (.OutputFormats.Get "gemini").Permalink }}
+  <entry>
+    <title>{{ .Title | transform.XMLEscape }}</title>
+    <id>{{ $link }}</id>
+    <link href="{{ $link }}" rel="alternate" />
+    <published>{{ .PublishDate.Format "2006-01-02T15:04:05Z07:00" }}</published>
+    <updated>{{ .Lastmod.Format "2006-01-02T15:04:05Z07:00" }}</updated>
+    <summary>{{ .Summary | plainify | htmlUnescape | replaceRE `\s+` " " | strings.TrimSpace | transform.XMLEscape }}</summary>
+  </entry>
+  {{- end }}
+</feed>

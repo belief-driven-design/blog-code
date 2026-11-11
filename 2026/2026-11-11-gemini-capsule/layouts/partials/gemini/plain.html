@@ -1,0 +1,20 @@
+{{- /*
+  Removes emphasis and Markdown escapes from a piece of inline text, but only
+  outside of code spans, so `a*b*c` or `"\\"` survive. Bold around a code span
+  (**`foo` is bar**) crosses the backticks, so it goes first.
+*/ -}}
+{{- $text := replaceRE "\\*\\*((?:[^`*]|`[^`]*`)+?)\\*\\*" "$1" . }}
+{{- $parts := slice }}
+{{- range $i, $part := split $text "`" }}
+  {{- if modBool $i 2 }}
+    {{- $part = replaceRE `\\(\s|$)` " " $part }}
+    {{- $part = replaceRE `\*\*(.+?)\*\*|__(.+?)__` "$1$2" $part }}
+    {{- $part = replaceRE `(^|[^\w*])\*([^*\s][^*]*?)\*` "$1$2" $part }}
+    {{- $part = replaceRE `(^|[^\w])_([^_\s][^_]*?)_($|[^\w])` "$1$2$3" $part }}
+    {{- $part = replaceRE `\s*\{[.#:][^}]*\}\s*$` "" $part }}
+    {{- $part = replaceRE `\\([\\*_{}\[\]()#+\-.!|<>~])` "$1" $part }}
+    {{- $part = $part | htmlUnescape }}
+  {{- end }}
+  {{- $parts = $parts | append $part }}
+{{- end }}
+{{- return strings.TrimSpace (replaceRE `\s{2,}` " " (delimit $parts "`")) }}

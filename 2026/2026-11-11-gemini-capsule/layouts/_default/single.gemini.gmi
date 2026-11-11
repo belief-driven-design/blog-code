@@ -1,0 +1,26 @@
+# {{ .Title }}
+{{- with .Params.subtitle }}
+## {{ . }}
+{{- end }}
+{{- if not (or .Params.hideMeta (eq .Type "page")) }}
+
+{{ .PublishDate.Format (default "January 2, 2006" site.Params.DateFormat) }} · {{ .ReadingTime }} min read
+{{- end }}
+{{- range .GetTerms "series" }}
+=> {{ strings.TrimSuffix "index.gmi" .RelPermalink }} {{ default (default "Part of the series" site.Params.seriesPrefix) .Params.prefix }} {{ .LinkTitle }}
+{{- end }}
+
+{{ partial "gemini/content.html" .RenderShortcodes }}
+
+{{- with .GetTerms "tags" }}
+
+## Tags
+{{ range . }}
+=> {{ strings.TrimSuffix "index.gmi" .RelPermalink }} {{ .LinkTitle }}
+{{- end }}
+{{- end }}
+
+---
+
+=> / Home: {{ site.Title }}
+=> {{ (.OutputFormats.Get "html").Permalink }} Read on the web
